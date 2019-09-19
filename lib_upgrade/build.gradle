@@ -1,0 +1,37 @@
+apply plugin: 'com.android.library'
+
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion compile_sdk_version
+
+    defaultConfig {
+        minSdkVersion min_sdk_version
+        targetSdkVersion target_sdk_version
+        versionCode upgrade_version_code
+        versionName upgrade_version_name
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "com.android.support:appcompat-v7:${support_library_version}"
+
+    implementation 'com.lzy.net:okgo:3.0.4' // 网络访问
+    implementation 'com.yanzhenjie.permission:support:2.0.1' // 权限处理
+
+    implementation 'com.ts.lib_dimens:lib_dimens:1.0.0' // dimens资源
+}
+
+// jcenter发布配置
+apply from: "jcenter_publish.gradle"

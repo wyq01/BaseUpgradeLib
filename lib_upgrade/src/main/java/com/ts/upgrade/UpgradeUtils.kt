@@ -1,5 +1,6 @@
 package com.ts.upgrade
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -20,7 +21,7 @@ import java.io.File
 
 object UpgradeUtils {
 
-    private const val UPGRADE_URL = "http://222.92.48.29:8211/api/food/foodTotalCount"
+    private const val UPGRADE_URL = "http://appmng.techservice.com.cn/api/app-version"
 
     interface OnUpgradeListener {
         fun onStart()
@@ -30,7 +31,9 @@ object UpgradeUtils {
     }
 
     private var onUpgradeListener: OnUpgradeListener? = null
+    @SuppressLint("StaticFieldLeak")
     private var progressDialog: UpgradeProgressDialog? = null
+    @SuppressLint("StaticFieldLeak")
     private var upgradeDialog: UpgradeDialog? = null
     private var apkFile: File? = null
 
@@ -61,8 +64,7 @@ object UpgradeUtils {
                 }
                 override fun onSuccess(response: Response<String>?) {
                     response?.let {
-//                        val result = it.body()
-                        val result = "{\"code\":0,\"msg\":\"查询成功!\",\"data\":{\"title\":\"升级提示标题\",\"message\":\"1.修复了app过于流畅的bug\\n2.解决了测试没事干的尴尬局面\",\"versionCode\":333,\"versionName\":\"3.3.3_release\",\"forceUpgrade\":false,\"downloadUrl\":\"http://61.155.214.215:9090/WZSJJ/apk/Android_WZSJJ_Client.apk\",\"fileSize\":\"17.3M\",\"publishTime\":1568774037552}}"
+                        val result = it.body()
                         if (showUpgradeDialog) {
                             val code = UpgradeJsonUtil.getInt(result, "code")
                             if (code == 0) {
@@ -167,8 +169,8 @@ object UpgradeUtils {
                                 }
                                 override fun downloadProgress(progress: Progress?) {
                                     super.downloadProgress(progress)
-                                    progress?.let {
-                                        upgradeDialog?.setProgress((it.currentSize * 100L / it.totalSize).toInt())
+                                    progress?.let { p ->
+                                        upgradeDialog?.setProgress((p.currentSize * 100L / p.totalSize).toInt())
                                     }
                                 }
                                 override fun onError(response: Response<File>?) {
@@ -180,8 +182,8 @@ object UpgradeUtils {
                         Toast.makeText(context, "应用内更新需要授予所需权限，如不授予可使用浏览器下载安装", Toast.LENGTH_SHORT).show()
                     }
                 }
-                .rationale { context, _, executor ->
-                    AlertDialog.Builder(context)
+                .rationale { c, _, executor ->
+                    AlertDialog.Builder(c)
                         .setMessage("下载安装包，需要读写存储权限")
                         .setPositiveButton("允许") { _, _ ->
                             executor.execute()
@@ -206,4 +208,5 @@ object UpgradeUtils {
             PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(context, permission)
         }
     }
+
 }

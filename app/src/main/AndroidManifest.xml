@@ -12,10 +12,13 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
+                <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <meta-data android:name="upgrade_title" android:value="有新版本" />
+        <meta-data android:name="upgrade_message" android:value="1.修复了app过于流畅的bug\n2.解决了测试没事干的尴尬局面" />
     </application>
 
 </manifest>

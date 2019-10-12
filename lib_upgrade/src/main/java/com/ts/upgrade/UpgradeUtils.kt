@@ -1,7 +1,7 @@
 package com.ts.upgrade
 
 import android.annotation.SuppressLint
-import android.content.Context
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -26,6 +26,7 @@ object UpgradeUtils {
     interface OnUpgradeListener {
         fun onStart()
         fun onSuccess(result: String)
+        fun onNoUpgrade()
         fun onError(error: String)
         fun onFinish()
     }
@@ -37,32 +38,34 @@ object UpgradeUtils {
     private var upgradeDialog: UpgradeDialog? = null
     private var apkFile: File? = null
 
-    fun upgrade(context: Context): UpgradeUtils {
-        return upgrade(context,
+    fun upgrade(activity: Activity): UpgradeUtils {
+        return upgrade(activity,
             showProgress = false,
             progressCancelable = true,
             showUpgradeDialog = true
         )
     }
 
-    fun upgrade(context: Context, showProgress: Boolean, progressCancelable: Boolean, showUpgradeDialog: Boolean): UpgradeUtils {
+    fun upgrade(activity: Activity, showProgress: Boolean, progressCancelable: Boolean, showUpgradeDialog: Boolean): UpgradeUtils {
         OkGo.get<String>(UPGRADE_URL)
-            .tag(context)
-            .params("packageName", context.packageName)
+            .tag(activity)
+            .params("packageName", activity.packageName)
             .execute(object : StringCallback() {
                 override fun onStart(request: Request<String, out Request<Any, Request<*, *>>>?) {
                     super.onStart(request)
+                    if (activity.isDestroyed || activity.isFinishing) return
                     onUpgradeListener?.onStart()
                     if (showProgress) {
-                        progressDialog = UpgradeProgressDialog.showDialog(context, "", progressCancelable)
+                        progressDialog = UpgradeProgressDialog.showDialog(activity, "", progressCancelable)
                         if (progressDialog != null && progressCancelable) {
                             progressDialog?.setOnDismissListener {
-                                cancel(context)
+                                cancel(activity)
                             }
                         }
                     }
                 }
                 override fun onSuccess(response: Response<String>?) {
+                    if (activity.isDestroyed || activity.isFinishing) return
                     response?.let {
                         val result = it.body()
                         if (showUpgradeDialog) {
@@ -80,9 +83,9 @@ object UpgradeUtils {
                                 val fileSize = UpgradeJsonUtil.getString(data, "fileSize")
                                 val publishTime = UpgradeJsonUtil.getLong(data, "publishTime")
 
-                                val currentVersionCode = context.packageManager.getPackageInfo(context.packageName, 0).versionCode
+                                val currentVersionCode = activity.packageManager.getPackageInfo(activity.packageName, 0).versionCode
                                 if (currentVersionCode < versionCode) {
-                                    upgradeDialog = UpgradeDialog(context)
+                                    upgradeDialog = UpgradeDialog(activity)
                                         .setTitle(title)
                                         .setVersion(versionName)
                                         .setFileSize(fileSize)
@@ -91,10 +94,10 @@ object UpgradeUtils {
                                         .setCancelable(!forceUpgrade)
                                         .setNeutralButton("去浏览器") {
                                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
-                                            context.startActivity(intent)
+                                            activity.startActivity(intent)
                                         }
                                         .setPositiveButton("确定") {
-                                            download(context, downloadUrl)
+                                            download(activity, downloadUrl)
                                         }
                                     if (!forceUpgrade) {
                                         upgradeDialog?.setNegativeButton("取消") { dialog ->
@@ -104,6 +107,8 @@ object UpgradeUtils {
                                         }
                                     }
                                     upgradeDialog?.show()
+                                } else {
+                                    onUpgradeListener?.onNoUpgrade()
                                 }
                             } else {
                                 onUpgradeListener?.onError(UpgradeJsonUtil.getString(result, "msg"))
@@ -115,12 +120,14 @@ object UpgradeUtils {
                 }
                 override fun onError(response: Response<String>?) {
                     super.onError(response)
+                    if (activity.isDestroyed || activity.isFinishing) return
                     response?.let {
                         onUpgradeListener?.onError(it.message())
                     }
                 }
                 override fun onFinish() {
                     super.onFinish()
+                    if (activity.isDestroyed || activity.isFinishing) return
                     onUpgradeListener?.onFinish()
                     progressDialog?.setOnDismissListener(null)
                     UpgradeProgressDialog.hideDialog()
@@ -134,25 +141,25 @@ object UpgradeUtils {
         return this
     }
 
-    fun cancel(context: Context) {
-        OkGo.getInstance().cancelTag(context)
+    fun cancel(activity: Activity) {
+        OkGo.getInstance().cancelTag(activity)
     }
 
-    private fun download(context: Context, url: String) {
+    private fun download(activity: Activity, url: String) {
         var apkExists = false
         apkFile?.let {
             apkExists = it.exists()
         }
         if (apkExists) {
-            AndPermission.with(context).install().file(apkFile).start()
+            AndPermission.with(activity).install().file(apkFile).start()
         } else {
-            AndPermission.with(context)
+            AndPermission.with(activity)
                 .runtime()
                 .permission(Permission.Group.STORAGE)
                 .onGranted {
                     var selfPermission = true
                     for (item in it) {
-                        if (!isGranted(context, item)) {
+                        if (!isGranted(activity, item)) {
                             selfPermission = false
                             break
                         }
@@ -164,7 +171,7 @@ object UpgradeUtils {
                                 override fun onSuccess(response: Response<File>?) {
                                     response?.let { r ->
                                         apkFile = r.body()
-                                        AndPermission.with(context).install().file(apkFile).start()
+                                        AndPermission.with(activity).install().file(apkFile).start()
                                     }
                                 }
                                 override fun downloadProgress(progress: Progress?) {
@@ -175,11 +182,11 @@ object UpgradeUtils {
                                 }
                                 override fun onError(response: Response<File>?) {
                                     super.onError(response)
-                                    Toast.makeText(context, "下载出错，请重试", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(activity, "下载出错，请重试", Toast.LENGTH_SHORT).show()
                                 }
                             })
                     } else {
-                        Toast.makeText(context, "应用内更新需要授予所需权限，如不授予可使用浏览器下载安装", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(activity, "应用内更新需要授予所需权限，如不授予可使用浏览器下载安装", Toast.LENGTH_SHORT).show()
                     }
                 }
                 .rationale { c, _, executor ->
@@ -195,17 +202,17 @@ object UpgradeUtils {
                         .show()
                 }
                 .onDenied {
-                    Toast.makeText(context, "应用内更新需要授予所需权限，如不授予可使用浏览器下载安装", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(activity, "应用内更新需要授予所需权限，如不授予可使用浏览器下载安装", Toast.LENGTH_SHORT).show()
                 }
                 .start()
         }
     }
 
-    private fun isGranted(context: Context, permission: String): Boolean {
+    private fun isGranted(activity: Activity, permission: String): Boolean {
         return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             true
         } else {
-            PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(context, permission)
+            PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(activity, permission)
         }
     }
 

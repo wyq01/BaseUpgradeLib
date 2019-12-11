@@ -43,7 +43,7 @@ android {
                 variant.outputs.all { output ->
                     def outputFile = output.outputFile
                     if (outputFile != null && outputFile.name.endsWith('.apk')) {
-                        def fileName = "base_upgrade_${versionName}.apk"
+                        def fileName = "BaseUpgrade_${versionName}.apk"
                         outputFileName = fileName
                     }
                 }

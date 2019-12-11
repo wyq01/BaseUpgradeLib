@@ -39,6 +39,7 @@ object UpgradeUtils {
     private var apkFile: File? = null
 
     fun upgrade(activity: Activity): UpgradeUtils {
+        onUpgradeListener = null
         return upgrade(activity,
             showProgress = false,
             progressCancelable = true,

@@ -23,14 +23,14 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation "com.android.support:appcompat-v7:${support_library_version}"
+    api fileTree(dir: 'libs', include: ['*.jar'])
+    api "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    api "com.android.support:appcompat-v7:${support_library_version}"
 
-    implementation 'com.lzy.net:okgo:3.0.4' // 网络访问
-    implementation 'com.yanzhenjie.permission:support:2.0.1' // 权限处理
+    api 'com.lzy.net:okgo:3.0.4' // 网络访问
+    api 'com.yanzhenjie.permission:support:2.0.1' // 权限处理
 
-    implementation 'com.ts.lib_dimens:lib_dimens:1.0.0' // dimens资源
+    api 'com.wyq.dimens:lib_dimens:1.0.0' // dimens资源
 }
 
 // jcenter发布配置

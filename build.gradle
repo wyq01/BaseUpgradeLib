@@ -55,8 +55,8 @@ allprojects {
         app_version_name = '1.0.0'
 
         // 升级库版本号
-        upgrade_version_code = 103
-        upgrade_version_name = '1.0.3'
+        upgrade_version_code = 105
+        upgrade_version_name = '1.0.5'
     }
 }
 
